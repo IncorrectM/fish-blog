@@ -16,7 +16,10 @@ export default defineConfig({
     sidebar: [
       {
         text: "Go",
-        items: [{ text: "Go的初印象", link: "/go/001-a-glance-of-go" }],
+        items: [
+          { text: "Go的初印象", link: "/go/001-a-glance-of-go" },
+          { text: "更具Go味的程序", link: "/go/002-the-go-way" },
+        ],
       },
     ],
 
