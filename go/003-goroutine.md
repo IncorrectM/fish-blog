@@ -202,3 +202,101 @@ for i := range 100 {
 这段程序中，我们把通道的缓冲区的空闲空间视作通行证，每个goroutine都需要获取令牌才能执行，并且必须在完成任务后归还令牌。借助缓冲通道的特性，这样可以将同时执行的goroutine数量约束在20个以内。
 
 > 这段代码中使用的`for i := range 100`同样是从Go 1.22起才有的特性，它会遍历$[0, 100)$共100个整数。
+
+## 通道与多路复用
+
+有时候，一个goroutine可能需要同时从多个通道中获取数据：
+
+```go
+num1 := make(chan int)
+num2 := make(chan int)
+num3 := make(chan int)	
+
+generator := func(out chan<- int, nums []int) {
+	for _, v := range nums {
+		out <- v
+	}
+}	
+
+go generator(num1, []int{1, 2, 3})
+go generator(num2, []int{11, 12, 13})
+go generator(num3, []int{21, 22, 23})
+
+for _ := range 3 {
+	x := <-num1
+	fmt.Printf("%d\t", x)
+}
+for _ := range 3 {
+	x := <-num2
+	fmt.Printf("%d\t", x)
+}
+for _ := range 3 {
+	x := <-num3
+	fmt.Printf("%d\t", x)
+}
+fmt.Println()
+```
+
+上述代码段的问题时，它总是需要等待num1发送完数据才能继续，也就是说num2和num3长期处于阻塞状态。
+
+Go语言的select关键字有一种独特的用法 —— **多路复用**：
+
+```go
+num1 := make(chan int)
+num2 := make(chan int)
+num3 := make(chan int)
+
+generator := func(out chan<- int, nums []int) {
+	for _, v := range nums {
+		out <- v
+	}
+}
+
+go generator(num1, []int{1, 2, 3})
+go generator(num2, []int{11, 12, 13})
+go generator(num3, []int{21, 22, 23})
+
+for _ = range 9 {
+	select {
+	case x := <-num1:
+		fmt.Printf("%d\t", x)
+	case x := <-num2:
+		fmt.Printf("%d\t", x)
+	case x := <-num3:
+		fmt.Printf("%d\t", x)
+	}
+}
+
+fmt.Println()
+```
+
+通过多路复用，程序从数个未阻塞的分支中随机选择一个执行，从而保证公平。
+
+> 多路复用不仅适用于接收，也适用于发送。实际上，select是从“就绪”的分支里选择的，包括可以接收到数据的接收分支，可以发送数据的发送分支以及默认分支。
+
+## 通道与终止goroutine
+
+借助于多路复用，我们可以实现一个关闭goroutine的函数:
+
+```go
+var done = make(chan struct{})
+
+func cancelled() bool {
+	select {
+	case <-done:
+		return true
+	default:
+		return false
+	}
+}
+```
+
+> 我们要保证没有任何goroutine往done中发送数据
+
+> 实际应用中可能需要根据实际需求修改
+
+goroutine可以在开始执行任务前，调用`cancelled`判断任务是否已经被取消。当需要取消任务时，只需要`close(done)`即可。
+
+这是因为，当`done`未被关闭时，`<-done`未就绪，因此多路复用进入默认分支，返回false，表示任务未结束。当`done`被关闭后，`<-done`总是返回零值，因此`<-done`总是就绪，故而返回true，表示任务已结束。
+
+因为go语言自身的特性，操作chan是天然并发安全的，因此不需要加入互斥锁等操作。
