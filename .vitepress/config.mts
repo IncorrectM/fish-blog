@@ -20,6 +20,7 @@ export default defineConfig({
           { text: "Go的初印象", link: "/go/001-a-glance-of-go" },
           { text: "更具Go味的程序", link: "/go/002-the-go-way" },
           { text: "goroutine来并发", link: "/go/003-goroutine" },
+          { text: "并发安全", link: "/go/004-concurrency-safety" },
         ],
       },
     ],
