@@ -52,44 +52,67 @@ THE,QUICK,BROWN,FOX,JUMPS,OVER,THE,LAZY,DOG
 可我们经常会希望共享数据。当程序中有多个goroutine共享同一个数据时，因为goroutine运行的前后顺序是无法预测的，可能存在潜在的问题，例如：
 
 ```go
-shared := 0
-for i := range 15 {
-	go func(index int) {
-		shared = index
-		time.Sleep(time.Duration(rand.Intn(2)) * time.Millisecond) // 为了让数据竞争问题发生
-		fmt.Printf("[%d] %d\t", index, shared)
-	}(i)
+var total int
+var wg sync.WaitGroup
+maxNum := 100
+wg.Add(maxNum)
+for i := range maxNum {
+	go func() {
+		total = total + i
+		wg.Done()
+	}()
 }
-time.Sleep(15 * time.Millisecond)
-fmt.Println()
+wg.Wait()
+expected := (0 + maxNum - 1) * maxNum / 2
+fmt.Printf("Result %d; Expecting %d; Correct: %v\n", total, expected, total == expected)
 ```
 
-现代计算机运行速度快，为了看到数据竞争问题，我们手动加入了一点延迟，运行结果可能是：
+运行结果可能是：
 
 ```plain
-[1] 1	[11] 11	[12] 12	[0] 0	[2] 2	[13] 13	[9] 9	[4] 4	[10] 9	[5] 9	[8] 9	[6] 9	[3] 9	[14] 9	[7] 9	
+Result 4763; Expecting 4950; Correct: false
 ```
 
-可以看到，部分index和shared无法正确对应。
+问题就出在`total = total + i`，它包括“读total”“total + i”“写total”这三部，当有多个goroutine同时运行时，就有可能出现交替执行的情况，比如：
+
+```plain
+A: 读total = 0
+B: 读total = 0
+A: total + 1 = 1
+B: total + 2 = 2
+B: 写total = 2
+A: 写total = 1
+```
+
+就会导致结果错误。
 
 ### 互斥锁
 
 为共享数据增加一个互斥锁，就能保证共享数据的安全：
 
 ```go
+	var total int
+	var wg sync.WaitGroup
 	var lock sync.Mutex
-	shared := 0
-	for i := range 15 {
-		go func(index int) {
+	maxNum := 100
+	wg.Add(maxNum)
+	for i := range maxNum {
+		go func() {
 			lock.Lock()
-			shared = index
-			time.Sleep(time.Duration(rand.Intn(2)) * time.Millisecond) // 为了让数据竞争问题发生
-			fmt.Printf("[%d] %d\t", index, shared)
+			total = total + i
 			lock.Unlock()
-		}(i)
+			wg.Done()
+		}()
 	}
-	time.Sleep(15 * time.Millisecond)
-	fmt.Println()
+	wg.Wait()
+	expected := (0 + maxNum - 1) * maxNum / 2
+	fmt.Printf("Result %d; Expecting %d; Correct: %v\n", total, expected, total == expected)
+```
+
+它总是输出：
+
+```plain
+Result 4950; Expecting 4950; Correct: true
 ```
 
 每次只能有一个goroutine获得互斥锁，这就保证了同一时刻只有一个goroutine访问共享的变量。对互斥锁的访问的安全性由运行时保证。
