@@ -113,6 +113,59 @@ A: 写total = 1
 Result 4950; Expecting 4950; Correct: true
 ```
 
+### Monitor Goroutine
+
+既然问题出现在共享可变内存，那我们只要让内存不被共享就行。可以把所有对共享内存的访问都限制在单个goroutine内部，通过通道进行读写，就能避免共享：
+
+```go
+	// 通过delta chan增加
+	delta := make(chan int)
+	// 通过total chan读取
+	total := make(chan int)
+
+	// 一切操作通过通道实现
+	add := func(d int) {
+		delta <- d
+	}
+	load := func() int {
+		return <-total
+	}
+
+	monitor := func() {
+		var value int // 只有这个goroutine可以访问这块内存
+		for {
+			select {
+			case d := <-delta:
+				value += d
+			case total <- value:
+			}
+		}
+	}
+
+	// 启动monitor
+	go monitor()
+
+	var wg sync.WaitGroup
+	maxNum := 100
+	wg.Add(maxNum)
+	for i := range maxNum {
+		go func() {
+			add(i)
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+	expected := (0 + maxNum - 1) * maxNum / 2
+	actual := load()
+	fmt.Printf("Result %d; Expecting %d; Correct: %v\n", actual, expected, actual == expected)
+```
+
+它总是输出：
+
+```plain
+Result 4950; Expecting 4950; Correct: true
+```
+
 ### 互斥锁
 
 互斥锁是一个较为通用的方法。为共享数据增加一个互斥锁，就能保证共享数据的安全：
