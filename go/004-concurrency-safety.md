@@ -86,9 +86,36 @@ A: 写total = 1
 
 就会导致结果错误。
 
+### 原子操作
+
+`total = total + i`是分三步走的，因此产生了潜在的问题，那有没有办法保证它一步完成，不可分割呢？有的，这种操作被称为原子操作 —— 像原子一样不可分割。Go提供了`atomic`包来实现原子操作。
+
+```go
+	var total atomic.Int64
+	var wg sync.WaitGroup
+	maxNum := 100
+	wg.Add(maxNum)
+	for i := range maxNum {
+		go func() {
+			total.Add(int64(i))
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+	expected := (0 + maxNum - 1) * maxNum / 2
+	actual := total.Load()
+	fmt.Printf("Result %d; Expecting %d; Correct: %v\n", actual, expected, int(actual) == expected)
+```
+
+因为不会再出现交错执行的问题，所以问题不会再出现，输出总是：
+
+```plain
+Result 4950; Expecting 4950; Correct: true
+```
+
 ### 互斥锁
 
-为共享数据增加一个互斥锁，就能保证共享数据的安全：
+互斥锁是一个较为通用的方法。为共享数据增加一个互斥锁，就能保证共享数据的安全：
 
 ```go
 	var total int
