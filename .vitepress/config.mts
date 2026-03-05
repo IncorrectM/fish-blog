@@ -11,6 +11,7 @@ export default defineConfig({
     nav: [
       { text: "Home", link: "/" },
       { text: "Go", link: "/go/001-a-glance-of-go" },
+      { text: "PreCrawl", link: "/go/101-precrawl" },
     ],
 
     sidebar: [
@@ -21,6 +22,7 @@ export default defineConfig({
           { text: "更具Go味的程序", link: "/go/002-the-go-way" },
           { text: "goroutine来并发", link: "/go/003-goroutine" },
           { text: "并发安全", link: "/go/004-concurrency-safety" },
+          { text: "PreCrawl", link: "/go/101-precrawl" },
         ],
       },
     ],
