@@ -11,6 +11,6 @@ hero:
       text: Go Articles
       link: /go/001-a-glance-of-go
     - theme: brand
-      text: Vue Articles
-      link: /go/001-a-glance-of-go
+      text: JavaScript
+      link: /js/001-hof
 ---

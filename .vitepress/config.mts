@@ -25,6 +25,10 @@ export default defineConfig({
           { text: "PreCrawl", link: "/go/101-precrawl" },
         ],
       },
+      {
+        text: "JavaScript",
+        items: [{ text: "高阶函数", link: "/js/001-hof.md" }],
+      },
     ],
 
     socialLinks: [
