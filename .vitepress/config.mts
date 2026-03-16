@@ -43,6 +43,10 @@ export default defineConfig({
                 text: "Redis与缓存",
                 link: "/others/redis/001-redis-and-cache",
               },
+              {
+                text: "Redis与分布式锁",
+                link: "/others/redis/002-redis-and-distributed-lock",
+              },
             ],
           },
         ],
