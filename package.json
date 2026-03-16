@@ -15,5 +15,8 @@
   "packageManager": "pnpm@10.26.0",
   "dependencies": {
     "vitepress": "^1.6.4"
+  },
+  "devDependencies": {
+    "markdown-it-mathjax3": "^4.3.2"
   }
 }

@@ -13,4 +13,7 @@ hero:
     - theme: brand
       text: JavaScript
       link: /js/001-hof
+    - theme: brand
+      text: 其他
+      link: /others/000-others
 ---

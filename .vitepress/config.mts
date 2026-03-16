@@ -6,6 +6,9 @@ export default defineConfig({
   base,
   title: "Fisher's Notebook",
   description: "A tech notebook for Fisher",
+  markdown: {
+    math: true,
+  },
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
@@ -28,6 +31,21 @@ export default defineConfig({
       {
         text: "JavaScript",
         items: [{ text: "高阶函数", link: "/js/001-hof.md" }],
+      },
+      {
+        text: "其他",
+        link: "/others/000-others.md",
+        items: [
+          {
+            text: "Redis",
+            items: [
+              {
+                text: "Redis与缓存",
+                link: "/others/redis/001-redis-and-cache",
+              },
+            ],
+          },
+        ],
       },
     ],
 
