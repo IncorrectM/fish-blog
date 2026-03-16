@@ -154,3 +154,44 @@ AOF通过记录Redis执行的每一条写指令来实现，他们被Append到一
 
 - **原理**：在 AOF 重写时，将当前内存数据以 RDB 形式写入 AOF 文件头部，后续增量命令再以 AOF 格式追加。
 - **优点**：结合了 RDB 的**加载快**和 AOF 的**丢失少**。
+
+## 数据过期策略
+
+给Key设置TTL后，这个Key就会在某个时刻过期，Redis会删除这些Key和对应的数据，包括两种删除策略：惰性删除和定期删除。
+
+### 惰性删除
+
+只在访问Key时检查是否过期并删除。
+
+优点：对CPU友好
+缺点：对内存不友好
+
+### 定期删除
+
+按照一定的频率扫描所有的Key检查是否过期并删除。
+
+#### Slow模式
+
+默认按照10hz的频率扫描，但每次扫描不超过25ms。
+
+#### Fast模式
+
+在事件循环中总是尝试扫描，但是两次扫描间隔不低于2ms，单次扫描事件不超过1ms。
+
+优点：可配置的扫描频率和时间
+缺点：对CPU不友好
+
+## 数据淘汰策略 maxmemory-policy
+
+- noeivtion
+- volatile-ttl：淘汰马上过期的
+- allkeys-random
+- volatile-random
+- allkeys-lru
+- volatile-lru
+- allkeys-lfu
+- volatile-lfu
+
+allkeys对应所有key，volatile对应有ttl的key。random表示随机淘汰，LRU表示最近最少访问，LFU表示最近访问频率最低。
+
+如何选择，还是看业务逻辑。在`旅游商城`中，Redis被用来保存用户信息，在每次通过gateway做权限校验时都需要查询一遍，因此我们采用LRU策略，把最近最长访问的数据保存在缓存里。
