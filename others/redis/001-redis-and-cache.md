@@ -93,3 +93,12 @@ Redis以模块的形式提供了一个内置的布隆过滤器，这里不深入
 `singleflight`类似于`monitor goroutine`，即只允许一个goroutine访问缓存，但存在不同。
 
 `monitor goroutine`是通过channel实现的，只能串行处理任务。而`singleflight`实现了请求合并，它内部维护一个map，保存了key和请求该key的goroutine的信息，在第一次接收到一个key的请求时去执行，后续所有对同一key的请求全部阻塞，当该key处理完成，则返回给所有请求该key的goroutine，可以说是“并行”的。
+
+## 缓存雪崩
+
+大量key同时过期或Redis崩溃导致大量访问数据库。
+
+1. 随机TTL：
+2. Redis集群：
+3. 降级限流：
+4. 多级缓存
